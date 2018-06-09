@@ -1,10 +1,11 @@
-from dateutil import parser
-from gpxpy.gpx import GPX, GPXTrack, GPXTrackSegment, GPXTrackPoint
-from pandas import read_csv
 
-basename = '2018-05-25'
+from gpxpy.gpx import GPX, GPXTrack, GPXTrackSegment, GPXTrackPoint
+from pandas import read_csv, to_datetime
+
+basename = '2018-06-07'
 
 df = read_csv('{0}.csv'.format(basename))
+df['timestamp']= to_datetime(df.time)
 
 gpx_obj = GPX()
 
@@ -17,7 +18,7 @@ gpx_track.segments.append(gpx_segment)
 gpx_segment.points.extend(
     (
         GPXTrackPoint(
-            time=parser.parse(row.timestamp),
+            time=row.timestamp,
             latitude=row.latitude,
             longitude=row.longitude
         ) for row in df.itertuples()

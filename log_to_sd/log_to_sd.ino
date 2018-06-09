@@ -16,14 +16,17 @@ Adafruit_GPS GPS(&GPSSerial);
 uint32_t timer = millis();
 const int chipSelect = 4;
 
-void setup()
-{
+String linesToFile[12];
+uint8_t counter = 0;
+
+void setup() {
+  pinMode(8, OUTPUT);
   pinMode(13, OUTPUT);
-  
+
   Serial.begin(115200);
   while (!Serial);  // uncomment to have the sketch wait until Serial is ready
-  
-     
+
+
   // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- some use 4800
   GPS.begin(9600);
   // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
@@ -51,8 +54,8 @@ void setup()
   GPSSerial.println(PMTK_Q_RELEASE);
 }
 
-void loop() // run over and over again
-{
+void loop() {
+  
   // read data from the GPS in the 'main loop'
   char c = GPS.read();
   // if you want to debug, this is a good time to do it!
@@ -72,74 +75,61 @@ void loop() // run over and over again
      
   if (millis() - timer > 5000) {
     timer = millis(); // reset the timer
-//    Serial.print("\nTime: ");
-//    Serial.print(GPS.hour, DEC); Serial.print(':');
-//    Serial.print(GPS.minute, DEC); Serial.print(':');
-//    Serial.print(GPS.seconds, DEC); Serial.print('.');
-//    Serial.println(GPS.milliseconds);
-//    Serial.print("Date: ");
-//    Serial.print(GPS.day, DEC); Serial.print('/');
-//    Serial.print(GPS.month, DEC); Serial.print("/20");
-//    Serial.println(GPS.year, DEC);
-//    Serial.print("Fix: "); Serial.print((int)GPS.fix);
-//    Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
-
 
 
     if (GPS.fix) {
       digitalWrite(13, HIGH);
       // initialize with 20 on some yk2 shit
-      String lineToFile = "20";
-      lineToFile += String(GPS.year, DEC);
-      lineToFile += "-";
-      lineToFile += String(GPS.month, DEC);
-      lineToFile += "-";
-      lineToFile += String(GPS.day, DEC);
-      lineToFile += "T";
-      lineToFile += String(GPS.hour, DEC);
-      lineToFile += ":";
-      lineToFile += String(GPS.minute, DEC);
-      lineToFile += ":";
-      lineToFile += String(GPS.seconds, DEC);
-      lineToFile += ".";
-      lineToFile += String(GPS.milliseconds, DEC);
+      linesToFile[counter] = "20";
+      linesToFile[counter] += String(GPS.year, DEC);
+      linesToFile[counter] += "-";
+      linesToFile[counter] += String(GPS.month, DEC);
+      linesToFile[counter] += "-";
+      linesToFile[counter] += String(GPS.day, DEC);
+      linesToFile[counter] += "T";
+      linesToFile[counter] += String(GPS.hour, DEC);
+      linesToFile[counter] += ":";
+      linesToFile[counter] += String(GPS.minute, DEC);
+      linesToFile[counter] += ":";
+      linesToFile[counter] += String(GPS.seconds, DEC);
+      linesToFile[counter] += ".";
+      linesToFile[counter] += String(GPS.milliseconds, DEC);
+      linesToFile[counter] += ",";
+      linesToFile[counter] += String(GPS.latitudeDegrees, 8);
+      linesToFile[counter] += ",";
+      linesToFile[counter] += String(GPS.longitudeDegrees, 8);
+      linesToFile[counter] += ",";
+      linesToFile[counter] += String(GPS.speed);
+      linesToFile[counter] += ",";
+      linesToFile[counter] += String(GPS.angle);
+      linesToFile[counter] += ",";
+      linesToFile[counter] += String(GPS.satellites);
 
-      lineToFile += ",";
-      
-      lineToFile += String(GPS.latitudeDegrees, 8);
-      lineToFile += GPS.lat;
+      if(counter == 11) {
+        digitalWrite(8, HIGH);
+        File dataFile = SD.open("gps.csv", FILE_WRITE);
 
-      lineToFile += ",";
-      
-      lineToFile += String(GPS.longitudeDegrees, 8);
-      lineToFile += GPS.lon;
-      
-      lineToFile += ",";
-      
-      lineToFile += String(GPS.speed);
+        if (dataFile) {
+          for(uint8_t i=0; i < 12; i++) {
+            dataFile.println(linesToFile[i]);
+            Serial.println(linesToFile[i]);
+          }
+          dataFile.close();
+        }
+        // if the file isn't open, pop up an error:
+        else {
+          Serial.println("error opening datalog.txt");
+        }
+        digitalWrite(8, LOW);
+        counter = 0;
 
-      lineToFile += ",";
-      
-      lineToFile += String(GPS.angle);
-
-      lineToFile += ",";
-      
-      lineToFile += String(GPS.satellites);
-      
-      File dataFile = SD.open("gps.csv", FILE_WRITE);
-
-      if (dataFile) {
-        dataFile.println(lineToFile);
-        dataFile.close();
-        Serial.println(lineToFile);
-      }
-      // if the file isn't open, pop up an error:
-      else {
-        Serial.println("error opening datalog.txt");
+      } else {
+        counter++;
       }
 
       delay(100);
       digitalWrite(13, LOW);
+
     } else {
       Serial.println("No Fix");
     }

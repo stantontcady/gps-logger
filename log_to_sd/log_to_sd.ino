@@ -91,9 +91,13 @@ void loop() {
       linesToFile[counter] += ":";
       linesToFile[counter] += String(GPS.minute, DEC);
       linesToFile[counter] += ":";
-      linesToFile[counter] += String(GPS.seconds, DEC);
-      linesToFile[counter] += ".";
-      linesToFile[counter] += String(GPS.milliseconds, DEC);
+      if(GPS.seconds == 60) {
+        linesToFile[counter] += "59.999";
+      } else {
+        linesToFile[counter] += String(GPS.seconds, DEC);
+        linesToFile[counter] += ".";
+        linesToFile[counter] += String(GPS.milliseconds, DEC);
+      }
       linesToFile[counter] += ",";
       linesToFile[counter] += String(GPS.latitudeDegrees, 8);
       linesToFile[counter] += ",";
